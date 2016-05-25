@@ -165,7 +165,7 @@ update' action model =
         Nothing -> (model, Cmd.none)
         Just Replenish ->
           ( { model | target = Nothing }
-          , Cmd.none
+          , Cmd.map Done model.actions.onChange
           )
         Just (Transfer x) ->
           ( { model | current = x.toward
@@ -208,8 +208,11 @@ update' action model =
                         }
                       , Cmd.batch
                           [ if x.hasStarted
-                            then Cmd.map More <| mkCmd <| DurationMsg oldTo <|
-                                   Duration.Reverse <| \_ -> Cmd.none
+                            then Cmd.batch
+                                   [ Cmd.map More <| mkCmd <| DurationMsg oldTo <|
+                                       Duration.Reverse <| \_ -> Cmd.none
+                                   , Cmd.map Done newActions.onBetweenChange
+                                   ]
                             else Cmd.none
                           , Cmd.map More <| mkCmd <| DurationMsg model.current <|
                               Duration.Forward <| \_ -> mkCmd Complete
@@ -239,7 +242,7 @@ update' action model =
                  Transfer x -> -- current is already leaving / has already left
                    let oldTo = x.toward
                    in  ( { model | actions = newActions
-                                 , target = Just <| Transfer { hasStarted = False
+                                 , target = Just <| Transfer { hasStarted = x.hasStarted
                                                              , toward = to
                                                              }
                          }
@@ -249,6 +252,7 @@ update' action model =
                                     Duration.Reverse <| \_ -> Cmd.none
                                 , Cmd.map More <| mkCmd <| DurationMsg to <|
                                     Duration.Forward <| \_ -> mkCmd Complete
+                                , Cmd.map Done newActions.onBetweenChange
                                 ]
                          else Cmd.none -- when current leaves then it will initialize to
                        )

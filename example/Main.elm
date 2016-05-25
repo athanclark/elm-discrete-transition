@@ -69,7 +69,7 @@ init =
 update : Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
-    DiscreteMsg a -> Debug.log "discrete" <|
+    DiscreteMsg a ->
       let (newDiscrete, eff) = Discrete.update
                                  (Ok << DiscreteMsg)
                                  a
@@ -100,7 +100,9 @@ update action model =
       , Cmd.none
       )
     Finished ->
-      ( { model | isTransitioning = False }
+      ( { model | isTransitioning = False
+                , between = Nothing
+        }
       , Cmd.none
       )
     Clicked n ->
@@ -108,7 +110,7 @@ update action model =
       , Cmd.batch
           [ mkCmd Start
           , mkCmd <| DiscreteMsg <| Discrete.GoTo n <|
-              { onChange = \_ -> mkCmd Finished
+              { onChange        = \_ -> mkCmd Finished
               , onBetweenChange = \_ -> mkCmd <| Between n
               }
           ]
