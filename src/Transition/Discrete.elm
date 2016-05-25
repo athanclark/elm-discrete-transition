@@ -8,7 +8,6 @@ module Transition.Discrete exposing
   , MsgSettings
   , emptyMsgSettings
   , update
-  , handle
   )
 
 {-|
@@ -28,10 +27,6 @@ module Transition.Discrete exposing
 ## Update
 
 @docs update
-
-## Results
-
-@docs handle
 
 -}
 
@@ -145,10 +140,19 @@ type TransitionResults a b
   | Tick a
 
 {-| -}
-update : Msg b
+update : (Msg b -> Result a b)
+      -> Msg b
+      -> Model a b
+      -> (Model a b, Cmd (Result a b))
+update f a m =
+  let (m', eff) = update' a m
+  in  (m', Cmd.map (handle f) eff)
+
+
+update' : Msg b
       -> Model a b
       -> (Model a b, Cmd (TransitionResults a b))
-update action model =
+update' action model =
   case action of
     DurationMsg k a ->
       let (newNodes, eff) = updateTransition k a model.nodes
