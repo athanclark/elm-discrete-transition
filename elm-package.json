@@ -1,0 +1,17 @@
+{
+    "version": "1.0.0",
+    "summary": "Transition between a set of discrete states",
+    "repository": "https://github.com/athanclark/elm-discrete-transition.git",
+    "license": "BSD3",
+    "source-directories": [
+        "src"
+    ],
+    "exposed-modules": [
+        "Transition.Discrete"
+    ],
+    "dependencies": {
+        "elm-lang/core": "4.0.0 <= v < 5.0.0",
+        "athanclark/elm-duration": "5.0.0 <= v < 6.0.0"
+    },
+    "elm-version": "0.17.0 <= v < 0.18.0"
+}
