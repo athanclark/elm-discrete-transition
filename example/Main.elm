@@ -5,13 +5,13 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
-import Transition.Discrete as Discrete
+import Transition.Discrete as Discrete exposing (NodeId)
 import Ease exposing (inQuad)
 
 import Dict exposing (Dict)
 import Time exposing (second, Time)
-
-
+import Color exposing (hsl, Color, toRgb)
+import Task
 
 
 type alias Model =
@@ -40,21 +40,28 @@ node2 = 2
 node3 : NodeId
 node3 = 3
 
-nodes : Dict NodeId (Discrete.Node a b)
+nodes : Dict NodeId (Discrete.Node Msg Msg)
 nodes =
-  let onward : Time -> Color
-      onward t = hsl (degrees <| 360 * (t / second)) 1 0.5
-  in  Dict.fromList [ (node1, Discrete.mkNode second onward)
-                    , (node2, Discrete.mkNode second onward)
-                    , (node3, Discrete.mkNode second onward)
+  let onward : Time -> Cmd Color
+      onward t =
+        Task.perform (\_ -> Debug.crash "") identity <|
+          Task.succeed <| hsl (degrees <| 360 * (t / second)) 1 0.5
+  in  Dict.fromList [ (node1, Discrete.mkNode second <|
+                                Cmd.map ChangeNode1Color << onward)
+                    , (node2, Discrete.mkNode second <|
+                                Cmd.map ChangeNode2Color << onward)
+                    , (node3, Discrete.mkNode second <|
+                                Cmd.map ChangeNode3Color << onward)
                     ]
 
-init : (Mode, Cmd Msg)
+init : (Model, Cmd Msg)
 init =
   ( { transition = Discrete.init node1 nodes
     , node1Color = hsl (degrees 360) 1 0.5
     , node2Color = hsl (degrees 0) 1 0.5
     , node3Color = hsl (degrees 0) 1 0.5
+    , isTransitioning = False
+    , between = Nothing
     }
   , Cmd.none
   )
@@ -84,8 +91,8 @@ update action model =
       ( { model | node3Color = c }
       , Cmd.none
       )
-    Toward n ->
-      ( { model | transition = Just n }
+    Between n ->
+      ( { model | between = Just n }
       , Cmd.none
       )
     Start ->
@@ -98,13 +105,23 @@ update action model =
       )
     Clicked n ->
       ( model
-      , Cmd.none
+      , Cmd.batch
+          [ mkCmd Start
+          , mkCmd <| DiscreteMsg <| Discrete.GoTo n <|
+              { onChange = \_ -> mkCmd Finished
+              , onBetweenChange = \_ -> mkCmd <| Between n
+              }
+          ]
       )
+
+mkCmd : a -> Cmd a
+mkCmd x = Task.perform (\_ -> Debug.crash "") identity <|
+            Task.succeed x
 
 showRgb : Color -> String
 showRgb c =
   let { red, green, blue } = toRgb c
-  "rgb(" + red + "," + green + "," + blue + ")"
+  in  "rgb(" ++ toString red ++ "," ++ toString green ++ "," ++ toString blue ++ ")"
 
 view : Model -> Html Msg
 view model =
@@ -123,7 +140,7 @@ view model =
         then [text "Is Transitioning..."]
         else []
     , div [] <|
-        case model.toward of
+        case model.between of
           Nothing -> []
           Just n  -> [text <| "toward: " ++ toString n]
     , div []
@@ -131,3 +148,10 @@ view model =
               ++ toString model.transition.current
           ]
     ]
+
+main = App.program
+  { init = init
+  , update = update
+  , view = view
+  , subscriptions = \_ -> Sub.none
+  }

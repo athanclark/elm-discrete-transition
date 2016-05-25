@@ -180,7 +180,8 @@ update' action model =
              Just (Transfer x) ->
                ( { model | target = Just <| Transfer { x | hasStarted = True } }
                , Cmd.batch
-                   [ Cmd.map More <| mkCmd <| DurationMsg x.toward <| Duration.Forward <| \_ -> mkCmd Complete
+                   [ Cmd.map More <| mkCmd <| DurationMsg x.toward <|
+                       Duration.Forward <| \_ -> mkCmd Complete
                    , Cmd.map Done model.actions.onBetweenChange
                    ]
                )
@@ -206,19 +207,22 @@ update' action model =
                         }
                       , Cmd.batch
                           [ if x.hasStarted
-                            then Cmd.map More <| mkCmd <| DurationMsg oldTo <| Duration.Reverse <| \_ -> Cmd.none
+                            then Cmd.map More <| mkCmd <| DurationMsg oldTo <|
+                                   Duration.Reverse <| \_ -> Cmd.none
                             else Cmd.none
-                          , Cmd.map More <| mkCmd <| DurationMsg model.current <| Duration.Forward <| \_ -> mkCmd Complete
+                          , Cmd.map More <| mkCmd <| DurationMsg model.current <|
+                              Duration.Forward <| \_ -> mkCmd Complete
                           ]
                       )
       else case model.target of
-             Nothing -> Debug.crash ""
+             Nothing ->
                ( { model | actions = newActions
                          , target = Just <| Transfer { hasStarted = False
                                                      , toward = to
                                                      }
                  }
-               , Cmd.map More <| mkCmd <| DurationMsg model.current <| Duration.Reverse <| \_ -> mkCmd <| HasReversed model.current
+               , Cmd.map More <| mkCmd <| DurationMsg model.current <|
+                   Duration.Reverse <| \_ -> mkCmd <| HasReversed model.current
                )
              Just s ->
                case s of
@@ -228,7 +232,8 @@ update' action model =
                                                          , toward = to
                                                          }
                      }
-                   , Cmd.map More <| mkCmd <| DurationMsg model.current <| Duration.Reverse <| \_ -> mkCmd <| HasReversed model.current
+                   , Cmd.map More <| mkCmd <| DurationMsg model.current <|
+                       Duration.Reverse <| \_ -> mkCmd <| HasReversed model.current
                    )
                  Transfer x -> -- current is already leaving / has already left
                    let oldTo = x.toward
@@ -239,8 +244,10 @@ update' action model =
                          }
                        , if x.hasStarted
                          then Cmd.batch -- current already left
-                                [ Cmd.map More <| mkCmd <| DurationMsg oldTo <| Duration.Reverse <| \_ -> Cmd.none
-                                , Cmd.map More <| mkCmd <| DurationMsg to <| Duration.Forward <| \_ -> mkCmd Complete
+                                [ Cmd.map More <| mkCmd <| DurationMsg oldTo <|
+                                    Duration.Reverse <| \_ -> Cmd.none
+                                , Cmd.map More <| mkCmd <| DurationMsg to <|
+                                    Duration.Forward <| \_ -> mkCmd Complete
                                 ]
                          else Cmd.none -- when current leaves then it will initialize to
                        )
