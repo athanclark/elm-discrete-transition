@@ -6,7 +6,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 import Transition.Discrete as Discrete
-import Easing exposing (inQuad)
+import Ease exposing (inQuad)
 
 import Dict exposing (Dict)
 import Time exposing (second, Time)
