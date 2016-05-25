@@ -69,7 +69,7 @@ init =
 update : Msg -> Model -> (Model, Cmd Msg)
 update action model =
   case action of
-    DiscreteMsg a ->
+    DiscreteMsg a -> Debug.log "discrete" <|
       let (newDiscrete, eff) = Discrete.update
                                  (Ok << DiscreteMsg)
                                  a
@@ -153,5 +153,5 @@ main = App.program
   { init = init
   , update = update
   , view = view
-  , subscriptions = \_ -> Sub.none
+  , subscriptions = \m -> Sub.map DiscreteMsg <| Discrete.subscriptions m.transition
   }

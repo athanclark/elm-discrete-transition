@@ -8,6 +8,7 @@ module Transition.Discrete exposing
   , MsgSettings
   , emptyMsgSettings
   , update
+  , subscriptions
   )
 
 {-|
@@ -26,7 +27,7 @@ module Transition.Discrete exposing
 
 ## Update
 
-@docs update
+@docs update, subscriptions
 
 -}
 
@@ -283,3 +284,10 @@ updateTransition k action xs =
 
 mkCmd : a -> Cmd a
 mkCmd = Task.perform (\e -> Debug.crash "failed somehow") identity << Task.succeed
+
+{-| -}
+subscriptions : Model a b -> Sub (Msg b)
+subscriptions model =
+  Sub.batch <|
+    List.map (\(n,Node v) -> Sub.map (DurationMsg n) <| Duration.subscriptions v.onward) <|
+      Dict.toList model.nodes
