@@ -36,7 +36,7 @@ import Duration
 
 import Time exposing (Time)
 import Task
-import Dict exposing (Dict)
+import IntDict exposing (IntDict)
 
 
 
@@ -103,16 +103,16 @@ applyPending m a =
 type alias Model a b =
   { current : NodeId
   , target  : Maybe TargetState
-  , nodes   : Dict NodeId (Node a b)
+  , nodes   : IntDict (Node a b)
   , actions : PendingMsg b
   }
 
 {-| -}
-init : NodeId -> Dict NodeId (Node a b) -> Model a b
+init : NodeId -> List (NodeId, (Node a b)) -> Model a b
 init first nodes' =
   { current = first
   , target  = Nothing
-  , nodes   = nodes'
+  , nodes   = IntDict.fromList nodes'
   , actions = { onChange        = Cmd.none
               , onBetweenChange = Cmd.none
               }
@@ -264,12 +264,12 @@ update' action model =
 
 updateTransition : NodeId
                 -> DurationMsg b
-                -> Dict NodeId (Node a b)
-                -> ( Dict NodeId (Node a b)
+                -> IntDict (Node a b)
+                -> ( IntDict (Node a b)
                    , Cmd (TransitionResults a b)
                    )
 updateTransition k action xs =
-  case Dict.get k xs of
+  case IntDict.get k xs of
     Nothing -> Debug.crash "key not found!"
     Just (Node x) ->
       let (newDuration, eff) =
@@ -279,7 +279,7 @@ updateTransition k action xs =
               action
               x.onward
           new = Node { x | onward = newDuration }
-      in  ( Dict.insert k new xs
+      in  ( IntDict.insert k new xs
           , Cmd.map (\r -> case r of
                              Err a -> Tick a
                              Ok m  -> More m) eff
@@ -293,5 +293,7 @@ mkCmd = Task.perform (\e -> Debug.crash "failed somehow") identity << Task.succe
 subscriptions : Model a b -> Sub (Msg b)
 subscriptions model =
   Sub.batch <|
-    List.map (\(n,Node v) -> Sub.map (DurationMsg n) <| Duration.subscriptions v.onward) <|
-      Dict.toList model.nodes
+    List.map (\(n, Node v) -> Sub.map (DurationMsg n)
+                           <| Duration.subscriptions v.onward
+             )
+          <| IntDict.toList model.nodes
