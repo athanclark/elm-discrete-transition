@@ -109,10 +109,10 @@ type alias Model a b =
 
 {-| -}
 init : NodeId -> List (NodeId, (Node a b)) -> Model a b
-init first nodes' =
+init first nodes_ =
   { current = first
   , target  = Nothing
-  , nodes   = IntDict.fromList nodes'
+  , nodes   = IntDict.fromList nodes_
   , actions = { onChange        = Cmd.none
               , onBetweenChange = Cmd.none
               }
@@ -146,14 +146,14 @@ update : (Msg b -> Result a b)
       -> Model a b
       -> (Model a b, Cmd (Result a b))
 update f a m =
-  let (m', eff) = update' a m
-  in  (m', Cmd.map (handle f) eff)
+  let (m_, eff) = update_ a m
+  in  (m_, Cmd.map (handle f) eff)
 
 
-update' : Msg b
+update_ : Msg b
       -> Model a b
       -> (Model a b, Cmd (TransitionResults a b))
-update' action model =
+update_ action model =
   case action of
     DurationMsg k a ->
       let (newNodes, eff) = updateTransition k a model.nodes
@@ -287,7 +287,7 @@ updateTransition k action xs =
 
 
 mkCmd : a -> Cmd a
-mkCmd = Task.perform (\e -> Debug.crash "failed somehow") identity << Task.succeed
+mkCmd = Task.perform identity << Task.succeed
 
 {-| -}
 subscriptions : Model a b -> Sub (Msg b)
